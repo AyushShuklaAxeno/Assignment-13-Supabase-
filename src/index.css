@@ -284,12 +284,78 @@ button[disabled] {
 }
 
 /* Mobile */
+/* Mobile */
 @media (max-width: 600px) {
-  .navbar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .navbar a:not(:first-child) { margin-left: 0; margin-right: 1.25rem; }
-  .product-list { padding: 0 1rem 1.5rem; }
-  .cart-container { margin: 1rem; }
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+  .navbar > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    width: 100%;
+  }
+  .navbar a:not(:first-child) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .navbar-user {
+    margin-left: 0;
+    margin-right: 0;
+    order: 3;
+    width: 100%;
+  }
+
+  .description-section,
+  #description {
+    padding: 1.5rem 1.25rem 1rem;
+  }
+
+  .controls-bar {
+    padding: 0 1.25rem 1.25rem;
+    flex-direction: column;
+  }
+  .controls-bar input,
+  .controls-bar select {
+    width: 100%;
+  }
+
+  .product-list {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.85rem;
+    padding: 0 1.25rem 1.5rem;
+  }
+  .product-image { height: 120px; }
+
+  .cart-container { margin: 1rem 1.25rem; padding: 1.25rem; }
+
+  .cart-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .cart-item-controls { flex-wrap: wrap; }
+
+  .discount-bar { flex-direction: column; align-items: stretch; }
+  .discount-bar input { width: 100%; }
+
+  .login-card { padding: 1.5rem; }
 }
+
+@media (max-width: 380px) {
+  .navbar a:first-child { font-size: 1.1rem; }
+  .product-list { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .login-page { padding: 0.5rem; }
+  .login-card { padding: 1.25rem; max-width: 100%; }
+}
+
+
+
+
 /* Login page */
 .loading-state {
   text-align: center;
@@ -334,4 +400,14 @@ button[disabled] {
   margin-right: 0.75rem;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.login-back-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  padding: 0;
 }

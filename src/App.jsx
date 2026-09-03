@@ -13,51 +13,49 @@ import {
   removeFromCart,
 } from "./services/cartService";
 
-function StoreApp() {
-  const { user, logout } = useAuth();
+function App() {
+  const { user, loading: authLoading, logout } = useAuth();
 
   const [sortOrder, setSortOrder] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
 
-  // Load products + this user's cart once, on login
+  // Products load for everyone, logged in or not
   useEffect(() => {
-    let cancelled = false;
+    fetchProducts()
+      .then(setProducts)
+      .catch((err) => setError(err.message))
+      .finally(() => setProductsLoading(false));
+  }, []);
 
-    async function loadData() {
-      try {
-        setLoading(true);
-        const [productList, cart] = await Promise.all([
-          fetchProducts(),
-          fetchCart(user.id),
-        ]);
-        if (!cancelled) {
-          setProducts(productList);
-          setCartItems(cart);
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  // Cart only loads once a user is logged in; clears when they log out
+  useEffect(() => {
+    if (!user) {
+      setCartItems([]);
+      return;
     }
+    fetchCart(user.id).then(setCartItems).catch((err) => setError(err.message));
+  }, [user]);
 
-    loadData();
-    return () => {
-      cancelled = true;
-    };
-  }, [user.id]);
+  // Once login succeeds, drop the login screen automatically
+  useEffect(() => {
+    if (user) setShowLogin(false);
+  }, [user]);
 
-  // Re-fetch just the cart after any mutation, so quantities/ids stay correct
   async function refreshCart() {
     const cart = await fetchCart(user.id);
     setCartItems(cart);
   }
 
   const handleAddToCart = async (product) => {
+    if (!user) {
+      setShowLogin(true); // guest clicked Add to Cart -> send to login
+      return;
+    }
     try {
       await addToCart(user.id, product);
       await refreshCart();
@@ -69,60 +67,53 @@ function StoreApp() {
   const handleIncrease = async (cartItemId) => {
     const item = cartItems.find((i) => i.cartItemId === cartItemId);
     if (!item || item.quantity >= item.maxQty) return;
-    try {
-      await setQuantity(cartItemId, item.quantity + 1);
-      await refreshCart();
-    } catch (err) {
-      setError(err.message);
-    }
+    await setQuantity(cartItemId, item.quantity + 1);
+    await refreshCart();
   };
 
   const handleDecrease = async (cartItemId) => {
     const item = cartItems.find((i) => i.cartItemId === cartItemId);
     if (!item) return;
-    try {
-      await setQuantity(cartItemId, item.quantity - 1);
-      await refreshCart();
-    } catch (err) {
-      setError(err.message);
-    }
+    await setQuantity(cartItemId, item.quantity - 1);
+    await refreshCart();
   };
 
   const handleRemove = async (cartItemId) => {
-    try {
-      await removeFromCart(cartItemId);
-      await refreshCart();
-    } catch (err) {
-      setError(err.message);
-    }
+    await removeFromCart(cartItemId);
+    await refreshCart();
   };
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const visibleProducts = products
-    .filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
+    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       if (sortOrder === "price-low") return a.price - b.price;
       if (sortOrder === "price-high") return b.price - a.price;
       return 0;
     });
 
-  if (loading) {
-    return <p className="loading-state">Loading your store...</p>;
+  if (authLoading || productsLoading) {
+    return <p className="loading-state">Loading...</p>;
+  }
+
+  // Guest clicked "Add to Cart" or "Login" -> show login screen only
+  if (!user && showLogin) {
+    return <Login onBack={() => setShowLogin(false)} />;
   }
 
   return (
     <>
-      <Navbar cartCount={cartCount} userEmail={user.email} onLogout={logout} />
+      <Navbar
+        cartCount={cartCount}
+        userEmail={user?.email}
+        onLogout={logout}
+        onLoginClick={() => setShowLogin(true)}
+      />
 
       <section id="description">
         <h2>Welcome to MyStore</h2>
-        <p>
-          We sell everyday essentials — electronics, home goods, stationery, and
-          accessories, all in one place.
-        </p>
+        <p>Browse freely — log in only when you're ready to add items to your cart.</p>
       </section>
 
       {error && <p className="login-error">{error}</p>}
@@ -134,10 +125,7 @@ function StoreApp() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-        >
+        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
           <option value="">Sort by</option>
           <option value="price-low">Price: Low to High</option>
           <option value="price-high">Price: High to Low</option>
@@ -150,27 +138,18 @@ function StoreApp() {
         cartItems={cartItems}
       />
 
-      <div id="cart">
-        <Cart
-          cartItems={cartItems.map((item) => ({
-            ...item,
-            id: item.cartItemId, // Cart/CartItem use `id` for increase/decrease/remove callbacks
-          }))}
-          onIncrease={handleIncrease}
-          onDecrease={handleDecrease}
-          onRemove={handleRemove}
-        />
-      </div>
+      {user && (
+        <div id="cart">
+          <Cart
+            cartItems={cartItems.map((item) => ({ ...item, id: item.cartItemId }))}
+            onIncrease={handleIncrease}
+            onDecrease={handleDecrease}
+            onRemove={handleRemove}
+          />
+        </div>
+      )}
     </>
   );
-}
-
-function App() {
-  const { user, loading } = useAuth();
-
-  if (loading) return <p className="loading-state">Loading...</p>;
-
-  return user ? <StoreApp /> : <Login />;
 }
 
 export default App;

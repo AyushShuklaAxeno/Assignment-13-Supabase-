@@ -9,7 +9,7 @@ export default function ProductCard({ name, price, image, category, inCart, onAd
             <p className="product-price">₹{price}</p>
             <Badge text={category} variant="secondary" />
             <Button 
-                label={inCart ? "Added ✓" : "Add to Cart"} 
+                label={inCart ? "Added " : "Add to Cart"} 
                 onClick={onAddToCart} 
                 variant={inCart ? "secondary" : "primary"} 
             />

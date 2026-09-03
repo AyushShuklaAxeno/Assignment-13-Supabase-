@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Button from "./Button";
 
-export default function Login() {
+export default function Login({ onBack }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,8 +23,8 @@ export default function Login() {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h2>MyStore Login</h2>
-        <p className="login-subtitle">Sign in to view your cart</p>
+        <h2>🛒 MyStore Login</h2>
+        <p className="login-subtitle">Sign in to add items to your cart</p>
 
         <label>
           Email
@@ -55,6 +55,12 @@ export default function Login() {
           label={submitting ? "Signing in..." : "Login"}
           variant="primary"
         />
+
+        {onBack && (
+          <button type="button" className="login-back-link" onClick={onBack}>
+            ← Back to store
+          </button>
+        )}
       </form>
     </div>
   );
